@@ -1,0 +1,3 @@
+task_id,title,content,source,metadata
+phase7-csv-001,Prospect requests enterprise pricing,Please provide a quote for the enterprise plan.,csv,"priority=medium"
+phase7-csv-002,Invoice payment needs review,The customer reports a duplicate payment.,csv,"department=billing"
