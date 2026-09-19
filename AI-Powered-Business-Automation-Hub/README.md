@@ -1,245 +1,578 @@
-# AI-Powered Business Automation Hub
+# 🤖 AI-Powered Business Automation Hub
 
-A professional Python foundation for processing business requests through structured, testable automation workflows. The project is intentionally conventional: it provides clear validation, persistence, logging, configuration, and workflow boundaries without introducing an advanced agentic system.
+> **A structured, testable Python automation platform for processing business tasks through validation, AI-style analysis, rule-based action planning, safe execution, persistence, integrations, and operational analytics.**
 
-**Current status: Phase 8: Operational Analytics**
+**Current Status:** 🟢 **Phase 8 — Operational Analytics**
 
-## Problem Statement
+---
 
-Business requests often arrive through inconsistent channels and require repeatable validation, processing, storage, and reporting. This project establishes a dependable local foundation for those steps so future integrations can be added without coupling them to the core workflow.
+## 🚀 Overview
 
-## Workflow Architecture
+The **AI-Powered Business Automation Hub** is an end-to-end business automation system designed to turn incoming business requests into structured, traceable, and actionable workflow results.
 
-```text
-Email / CSV / API Input
-    -> Input Validation and Transformation
-    -> BusinessTask
-    -> FastAPI Route (optional HTTP boundary)
-    -> AI Analysis and Classification
-    -> Automation Rules
-    -> Action Planning
-    -> Action Execution
-    -> Integration Router
-       -> Notification Connector
-       -> Webhook Connector
-       -> Report Connector
-    -> Database Storage
-    -> AutomationResult
-```
+The system accepts tasks through multiple input formats, validates and normalizes them into a common domain model, performs deterministic AI-style analysis, applies business rules, plans and executes actions safely, persists the processing lifecycle in SQLite, routes integration events through dedicated connectors, and exposes the workflow through a FastAPI REST API.
 
-## CURRENTLY IMPLEMENTED
+The architecture is intentionally modular and conventional. It establishes a dependable foundation for future external integrations without coupling external services to the core workflow.
 
-- `Settings` configuration with environment overrides and centralized `pathlib.Path` locations.
-- Automatic creation of input, output, database, and log directories.
-- Pydantic models for `BusinessTask`, `AutomationResult`, and `WorkflowStatus`.
-- Pydantic input models for structured email, CSV rows, and API-style payloads.
-- Unified ingestion adapters that transform external inputs into `BusinessTask` objects.
-- Local email-style ingestion without a real mail provider.
-- CSV ingestion with file, extension, required-column, and row validation.
-- JSON/API-style dictionary ingestion without a web server.
-- Structured `TaskAnalysis` models with category, priority, summary, confidence, and recommended actions.
-- Custom application exceptions and reusable validation rules.
-- Console and file logging with duplicate-handler protection.
-- SQLite database initialization, parameterized task storage, retrieval, and counting.
-- A focused `AIAnalyzer` abstraction with deterministic, credential-free demo analysis.
-- Rule-based classification for support, sales, urgent, billing, operations, and general tasks.
-- Rule-based priority detection for low, medium, high, and critical tasks.
-- Related SQLite analysis records linked to stored business tasks.
-- A workflow that validates, analyzes, stores, and returns structured task results.
-- Deterministic `AutomationRulesEngine` action planning for urgent, support, sales, billing, operations, and general tasks.
-- Safe local `ActionExecutor` execution with structured success and failure results.
-- Related SQLite action persistence and retrieval by task ID.
-- Execution lifecycle logging for task receipt, analysis, planning, and action outcomes.
-- A unified-input demo covering email, CSV, and API-style sources.
-- `IntegrationRouter` decoupling action execution from connector implementations.
-- Notification integration simulation with recipient-group and priority payloads.
-- Webhook integration simulation with payload validation and no network access.
-- Local report/event generation under the configured output directory.
-- FastAPI REST service over the existing workflow.
-- Single-task and sequential batch task processing.
-- Health monitoring and automatic OpenAPI documentation.
-- Explicit task lifecycle tracking: `received`, `processing`, `completed`, and `failed`.
-- Detailed SQLite processing persistence with timing, planned actions, execution results, and integration results.
-- Deterministic duplicate task protection by task ID.
-- Controlled workflow failure handling with safe API errors and logged diagnostics.
-- Reliable sequential batch behavior with an explicit result for every submitted item.
-- Operational overview analytics for task status, source, category, and priority.
-- Processing performance analytics with duration metrics in seconds.
-- Persisted integration activity analytics distinguishing simulated and completed events.
-- Bounded recent activity monitoring with deterministic newest-first ordering.
-- Pytest coverage for configuration, input models, ingestion, validation, analysis, rules, execution, database operations, and workflow behavior.
+### What the system demonstrates
 
-## FUTURE PLANNED INTEGRATIONS
+- 🧩 Modular application architecture
+- 🔎 Structured input validation and transformation
+- 🧠 Deterministic AI-style task analysis
+- ⚙️ Rule-based automation planning
+- 🛡️ Safe, locally simulated action execution
+- 💾 SQLite persistence and lifecycle tracking
+- 🔌 Decoupled integration routing
+- 🌐 FastAPI REST API
+- 📊 Operational analytics
+- 🧪 Automated testing
+- 📝 Structured logging and controlled error handling
+- 🔁 Deterministic idempotent task processing
 
-- Gmail, Outlook, Slack, and Microsoft Teams.
-- Real webhook delivery, CRM systems, and external business APIs.
-- Real LLM provider integration behind the existing `AIAnalyzer` boundary.
-- Reporting dashboards and production deployment.
+---
 
-The REST API, local integrations, and demo mode are implemented. Gmail, Outlook, Slack, Teams, real webhook delivery, CRM systems, external business APIs, and real LLM providers remain future integrations.
+## 🎯 Problem Statement
 
-## PHASE 7: RELIABILITY & PERSISTENCE
+Business requests can arrive through inconsistent channels and often require the same operational sequence:
 
-Tasks are persisted with a lifecycle record and processing timestamps. A successful workflow reaches `completed`; failures after task acceptance reach `failed` and retain a generic failure marker while detailed diagnostics remain in logs. Processing duration is stored in milliseconds.
+~~~text
+receive → validate → analyze → decide → act → persist → report
+~~~
 
-Task IDs are deterministic idempotency keys. Submitting an existing task ID through `POST /tasks` returns HTTP `409` and does not overwrite the original record. In `POST /tasks/batch`, duplicate or failed items receive an individual `failed` result while other items continue sequentially.
+Without a structured workflow, these responsibilities can become tightly coupled and difficult to test, extend, or operate reliably.
 
-The database keeps processing information in a separate `task_processing` table, so existing SQLite databases are upgraded non-destructively when initialized.
+This project provides a local automation foundation that separates those responsibilities into explicit components and establishes clear boundaries for future integrations.
 
-## PHASE 8: OPERATIONAL ANALYTICS
+---
 
-The backend analytics layer reads persisted task, analysis, lifecycle, timing, and integration data. It safely handles empty databases and never invents duration or integration information for records where those values were not stored. The analytics endpoints can later support a dashboard or external reporting system; no frontend dashboard is included.
+## 🏗️ End-to-End Architecture
 
-Available endpoints:
+~~~text
+┌─────────────────────────────────────────────────────────────┐
+│                     INPUT SOURCES                           │
+│          Email  •  CSV  •  API-style payloads              │
+└──────────────────────────────┬──────────────────────────────┘
+                               ↓
+┌─────────────────────────────────────────────────────────────┐
+│              INPUT VALIDATION & TRANSFORMATION              │
+│       Pydantic models • ingestion adapters • validation     │
+└──────────────────────────────┬──────────────────────────────┘
+                               ↓
+                       ┌──────────────┐
+                       │ BusinessTask │
+                       └──────┬───────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│                  AI ANALYSIS & CLASSIFICATION               │
+│      category • priority • summary • confidence • actions  │
+└──────────────────────────────┬──────────────────────────────┘
+                               ↓
+┌─────────────────────────────────────────────────────────────┐
+│                    AUTOMATION RULES                         │
+│              deterministic action planning                  │
+└──────────────────────────────┬──────────────────────────────┘
+                               ↓
+┌─────────────────────────────────────────────────────────────┐
+│                     ACTION EXECUTION                        │
+│               safe local execution & results               │
+└──────────────────────────────┬──────────────────────────────┘
+                               ↓
+┌─────────────────────────────────────────────────────────────┐
+│                   INTEGRATION ROUTER                        │
+│   Notification • Webhook • Report connectors               │
+└───────────────┬──────────────────┬──────────────────────────┘
+                │                  │
+                └──────────┬───────┘
+                           ↓
+                 ┌───────────────────┐
+                 │ SQLite Persistence│
+                 └─────────┬─────────┘
+                           ↓
+                 ┌───────────────────┐
+                 │ Operational       │
+                 │ Analytics         │
+                 └─────────┬─────────┘
+                           ↓
+                 ┌───────────────────┐
+                 │ FastAPI REST API  │
+                 └───────────────────┘
+~~~
 
-- `GET /analytics/overview` returns total, completed, failed, received, and processing counts, safe completion/failure rates, and grouped source/category/priority counts.
-- `GET /analytics/performance` returns average, minimum, and maximum processing duration in seconds for records with duration metadata.
-- `GET /analytics/integrations` returns persisted integration event counts by connector and status.
-- `GET /analytics/recent?limit=20` returns bounded newest-first task activity. Limits are safely clamped to 1-100.
+---
 
-Real email providers, API servers, webhook delivery, CRM systems, external APIs, and LLM integrations are not implemented yet. All Phase 5 connectors default to local simulation and no external credentials are required.
+## ✨ Implemented Capabilities
 
-## Unified Input Layer
+### 📥 Unified Input Layer
 
-The input layer keeps external formats separate from the automation workflow:
+Three ingestion adapters keep external input formats separate from the core workflow:
 
-1. `EmailIngestion` validates `EmailInput` and creates an email-sourced `BusinessTask`.
-2. `CSVIngestion` validates a `task_id,title,content,source` CSV format and creates one task per row.
-3. `APIIngestion` validates a Python dictionary representing a future API request.
+| Input | Implementation |
+|---|---|
+| Email-style input | EmailIngestion |
+| CSV input | CSVIngestion |
+| API-style dictionary | APIIngestion |
 
-All three adapters raise clear ingestion exceptions for malformed input and return the same `BusinessTask` type. The existing workflow then performs analysis, rule evaluation, action execution, and SQLite storage.
+All adapters validate their input, transform it into the shared BusinessTask model, and raise clear ingestion exceptions when input is malformed.
 
-## AI Analysis Architecture
+### 🧠 AI Analysis
 
-`Workflow` receives an `AIAnalyzer` through dependency injection. The analyzer currently uses deterministic keyword rules, which makes local runs and tests repeatable. `Settings` exposes `DEMO_MODE` and `AI_PROVIDER` so a future provider can be added without moving analysis logic into the workflow.
+Workflow receives an AIAnalyzer through dependency injection.
 
-Each analysis contains:
+The current analyzer uses deterministic keyword rules so local execution and tests remain repeatable and credential-free.
 
-- `category`: `support`, `sales`, `urgent`, `billing`, `operations`, or `general`.
-- `priority`: `low`, `medium`, `high`, or `critical`.
-- `summary`: a concise task-title summary.
-- `confidence`: a validated score from `0.0` to `1.0`.
-- `recommended_actions`: deterministic next-step suggestions.
+Each analysis provides:
 
-The Phase 3 rules engine converts analysis into structured actions. The local executor simulates those actions, records completion or failure, and never sends email or calls external systems.
+- category
+- priority
+- summary
+- confidence
+- recommended_actions
 
-## External Action Integrations
+Supported categories:
 
-`ActionExecutor` continues to own action lifecycle and delegates integration-backed actions to `IntegrationRouter`. The router selects one independent connector:
+support · sales · urgent · billing · operations · general
 
-- `NotificationConnector` creates recipient, subject, message, task, and priority payloads.
-- `WebhookConnector` validates event payloads and simulates delivery locally.
-- `ReportConnector` writes structured event records to `data/output/`.
+Supported priorities:
 
-`INTEGRATION_SIMULATION_MODE=true` is the default. `ENABLE_WEBHOOK_DELIVERY` is disabled by default, and the current implementation does not make network calls.
+low · medium · high · critical
 
-## Project Structure
+The architecture also exposes DEMO_MODE and AI_PROVIDER configuration boundaries for future provider integration.
 
-```text
+### ⚙️ Automation Rules & Action Execution
+
+The AutomationRulesEngine converts analysis results into structured actions for different business scenarios.
+
+ActionExecutor owns the action lifecycle and returns structured success/failure results while keeping execution local and controlled.
+
+The system covers rule-driven actions for:
+
+- Support
+- Sales
+- Urgent tasks
+- Billing
+- Operations
+- General tasks
+
+### 🔌 Integration Layer
+
+IntegrationRouter separates action execution from connector implementations.
+
+Current connectors include:
+
+- **NotificationConnector** — creates structured notification payloads.
+- **WebhookConnector** — validates webhook event payloads and simulates delivery locally.
+- **ReportConnector** — writes structured local event records under the configured output directory.
+
+By default:
+
+~~~text
+INTEGRATION_SIMULATION_MODE=true
+~~~
+
+External side effects are therefore controlled during local execution.
+
+### 💾 Persistence & Reliability
+
+SQLite stores task and processing information, including:
+
+- Task data
+- Analysis results
+- Lifecycle state
+- Processing timestamps
+- Processing duration
+- Planned actions
+- Execution results
+- Integration activity
+
+Task IDs act as deterministic idempotency keys.
+
+For POST /tasks, an existing task ID returns **HTTP 409** rather than overwriting the original record.
+
+For POST /tasks/batch, duplicate or failed items receive individual results while other items continue sequentially.
+
+Database processing information is maintained separately in the task_processing table, with non-destructive initialization behavior for existing SQLite databases.
+
+### 📊 Operational Analytics
+
+Phase 8 adds repository-backed operational analytics over persisted workflow data.
+
+#### GET /analytics/overview
+
+Provides:
+
+- Total task count
+- Completed count
+- Failed count
+- Received count
+- Processing count
+- Completion/failure rates
+- Grouped source counts
+- Grouped category counts
+- Grouped priority counts
+
+#### GET /analytics/performance
+
+Provides:
+
+- Average processing duration
+- Minimum processing duration
+- Maximum processing duration
+
+Duration statistics are calculated only from records containing duration metadata.
+
+#### GET /analytics/integrations
+
+Provides persisted integration event counts grouped by connector and status.
+
+#### GET /analytics/recent?limit=20
+
+Provides bounded, newest-first task activity.
+
+The limit is safely clamped to 1–100.
+
+---
+
+## 🛡️ Safety & Operational Boundaries
+
+The project is intentionally designed for safe local execution.
+
+- No external credentials are required for demo mode.
+- Integration simulation is enabled by default.
+- Webhook delivery is disabled by default.
+- Current connectors do not make external network calls.
+- Workflow failures are handled through controlled API errors and logged diagnostics.
+- Detailed diagnostics remain in logs while externally exposed failure information remains controlled.
+- Input models and reusable validation rules establish explicit boundaries around incoming data.
+
+This makes the system suitable for reproducible development, testing, and portfolio demonstration while preserving clear extension points for future production integrations.
+
+---
+
+## 📡 REST API
+
+The FastAPI service exposes the existing workflow through a local HTTP boundary.
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| GET | /health | Service health check |
+| POST | /tasks | Process a single task |
+| POST | /tasks/batch | Process tasks sequentially |
+| GET | /tasks/{task_id} | Retrieve persisted task data |
+| GET | /analytics/overview | Operational overview |
+| GET | /analytics/performance | Processing performance |
+| GET | /analytics/integrations | Integration activity |
+| GET | /analytics/recent?limit=20 | Recent task activity |
+
+### Example request
+
+~~~json
+{
+  "task_id": "api-001",
+  "title": "Customer requests pricing information",
+  "content": "Please send enterprise pricing details.",
+  "source": "api",
+  "metadata": {
+    "customer_id": "customer-123"
+  }
+}
+~~~
+
+### Interactive API documentation
+
+When the service is running:
+
+~~~text
+http://127.0.0.1:8000/docs
+~~~
+
+OpenAPI is available at:
+
+~~~text
+/openapi.json
+~~~
+
+---
+
+## 📁 Project Structure
+
+~~~text
 AI-Powered-Business-Automation-Hub/
-├── data/                 # Local input and output files
-│   └── input/sample_tasks.csv # Demo CSV input
-├── database/             # SQLite database files
-├── logs/                 # Application logs
-├── src/                  # Application package
-│   ├── ai_analyzer.py    # Demo analysis and future provider boundary
-│   ├── action_executor.py # Safe local action execution
-│   ├── analytics.py       # Repository-backed operational analytics
-│   ├── api_ingestion.py   # API-style dictionary adapter
-│   ├── automation_rules.py # Deterministic action planning
-│   ├── csv_ingestion.py   # CSV file adapter
-│   ├── integration_models.py # Connector request/result models
-│   ├── integration_router.py  # Action-to-connector routing
+│
+├── data/
+│   └── input/
+│       └── sample_tasks.csv
+│
+├── database/
+│
+├── logs/
+│
+├── src/
+│   ├── ai_analyzer.py
+│   ├── action_executor.py
+│   ├── analytics.py
+│   ├── api_ingestion.py
+│   ├── automation_rules.py
+│   ├── csv_ingestion.py
 │   ├── database_manager.py
-│   ├── models.py         # Business and analysis models
-│   ├── email_ingestion.py # Structured email adapter
-│   ├── input_models.py    # External input models
-│   ├── notification_connector.py # Notification simulation
-│   ├── report_connector.py # Local event reports
-│   ├── api/                 # FastAPI service layer
-│   │   ├── app.py
-│   │   ├── dependencies.py
-│   │   ├── routes.py
-│   │   └── schemas.py
-│   ├── task_ingestion.py  # Shared ingestion boundary
-│   ├── webhook_connector.py # Webhook simulation
-│   └── workflow.py       # Validation, analysis, and persistence flow
-├── tests/                # Automated tests
-├── .env.example          # Optional environment configuration
-├── requirements.txt      # Runtime and test dependencies
-└── pytest.ini            # Pytest configuration
-```
+│   ├── email_ingestion.py
+│   ├── input_models.py
+│   ├── integration_models.py
+│   ├── integration_router.py
+│   ├── models.py
+│   ├── notification_connector.py
+│   ├── report_connector.py
+│   ├── task_ingestion.py
+│   ├── webhook_connector.py
+│   ├── workflow.py
+│   │
+│   └── api/
+│       ├── app.py
+│       ├── dependencies.py
+│       ├── routes.py
+│       └── schemas.py
+│
+├── tests/
+├── .env.example
+├── requirements.txt
+└── pytest.ini
+~~~
 
-## Installation
+### Architectural responsibilities
 
-From this directory, create and activate a virtual environment, then install dependencies:
+| Component | Responsibility |
+|---|---|
+| ai_analyzer.py | Deterministic analysis and future provider boundary |
+| action_executor.py | Safe action execution and lifecycle results |
+| analytics.py | Repository-backed operational analytics |
+| *_ingestion.py | Input validation and transformation |
+| automation_rules.py | Deterministic action planning |
+| database_manager.py | SQLite persistence |
+| integration_router.py | Routes actions to connectors |
+| *_connector.py | Individual integration behavior |
+| models.py | Core domain and analysis models |
+| workflow.py | Central validation, analysis, action, and persistence flow |
+| api/ | FastAPI application boundary |
 
-```bash
+---
+
+## 🧪 Testing & Verification
+
+The project includes pytest coverage across the major workflow boundaries, including:
+
+- Configuration
+- Input models
+- Input ingestion
+- Validation
+- AI analysis
+- Automation rules
+- Action execution
+- Database operations
+- Workflow behavior
+- API-related behavior
+
+Run the test suite with:
+
+~~~bash
+pytest
+~~~
+
+The goal is deterministic, repeatable verification of the core automation workflow.
+
+---
+
+## ⚙️ Installation
+
+From the project directory:
+
+~~~bash
 python -m venv .venv
-# Windows PowerShell
+~~~
+
+### Windows PowerShell
+
+~~~powershell
 .\.venv\Scripts\Activate.ps1
+~~~
+
+### Install dependencies
+
+~~~bash
 pip install -r requirements.txt
-```
+~~~
 
-Copy `.env.example` to `.env` only when local configuration overrides are needed. Demo and integration simulation modes work without API keys, credentials, or internet access.
+### Environment configuration
 
-## Configuration
+Copy .env.example to .env only when local configuration overrides are required.
 
-- `DEMO_MODE=true` enables deterministic analysis.
-- `INTEGRATION_SIMULATION_MODE=true` prevents external side effects.
-- `ENABLE_WEBHOOK_DELIVERY=false` keeps webhook delivery disabled.
-- `OUTPUT_DIRECTORY=data/output` controls local report event records.
+The default demo and integration simulation modes work without API keys, external credentials, or internet access.
 
-## API Usage
+---
+
+## 🔧 Configuration
+
+| Variable | Purpose |
+|---|---|
+| DEMO_MODE | Enables deterministic analysis |
+| INTEGRATION_SIMULATION_MODE | Prevents external integration side effects |
+| ENABLE_WEBHOOK_DELIVERY | Keeps webhook delivery disabled by default |
+| OUTPUT_DIRECTORY | Controls local report/event records |
+
+The Settings configuration layer centralizes environment overrides and project paths using pathlib.Path.
+
+---
+
+## ▶️ Run the Demo
+
+~~~bash
+python -m src.main
+~~~
+
+The demo:
+
+1. Initializes the local SQLite database.
+2. Loads an email-style input.
+3. Loads the sample CSV input.
+4. Creates an API-style dictionary input.
+5. Converts all inputs into BusinessTask objects.
+6. Sends them through the automation workflow.
+7. Executes applicable local integration actions.
+8. Persists workflow and processing information.
+9. Prints integration/result information.
+10. Produces a concise operational summary.
+
+The CLI demo and FastAPI service share the same workflow and analytics architecture.
+
+---
+
+## 🌐 Run the API
 
 Start the local service with:
 
-```bash
+~~~bash
 uvicorn src.api.app:app --reload
-```
+~~~
 
-Available endpoints:
+Then open the interactive documentation:
 
-- `GET /health` checks service health.
-- `POST /tasks` processes one task through the existing workflow.
-- `POST /tasks/batch` processes a JSON list sequentially.
-- `GET /tasks/{task_id}` returns persisted task, analysis, and action data.
+~~~text
+http://127.0.0.1:8000/docs
+~~~
 
-Example request:
+---
 
-```json
-{
-    "task_id": "api-001",
-    "title": "Customer requests pricing information",
-    "content": "Please send enterprise pricing details.",
-    "source": "api",
-    "metadata": {"customer_id": "customer-123"}
-}
-```
+## 🔭 Future Integration Boundaries
 
-Interactive documentation is available at `http://127.0.0.1:8000/docs`; the OpenAPI document is available at `/openapi.json`.
+The current architecture provides extension points for:
 
-## Run Tests
+- Gmail
+- Outlook
+- Slack
+- Microsoft Teams
+- Real webhook delivery
+- CRM systems
+- External business APIs
+- Real LLM providers
+- Reporting dashboards
+- Production deployment
 
-```bash
-pytest
-```
+These are **future integrations**, not currently implemented capabilities.
 
-## Run The Demo
+The existing AIAnalyzer, integration router, connector boundaries, and API architecture provide clear locations for introducing them without moving external-service logic into the core workflow.
 
-```bash
-python -m src.main
-```
+---
 
-The demo initializes the local SQLite database, loads one email input, the sample CSV file, and one API-style dictionary, then sends every resulting `BusinessTask` through the full automation workflow. It prints the integration connector and result status for actions that trigger integrations, followed by a concise operational summary. The CLI and FastAPI service share the same workflow and analytics architecture.
+## 🧭 Development Evolution
 
-## Technology Stack
+### Phase 7 — Reliability & Persistence
 
-- Python 3.10+
-- Pydantic for domain model validation
-- SQLite via Python's standard library
-- `pathlib`, `logging`, and `sqlite3` from the standard library
-- pytest for automated testing
-- python-dotenv for optional local environment configuration
-- FastAPI and Uvicorn for the REST service
-- HTTPX for isolated API tests
+Introduced:
+
+- Task lifecycle persistence
+- Processing timestamps
+- Processing duration
+- Deterministic idempotency
+- Duplicate-task protection
+- Sequential batch behavior
+- Dedicated task_processing persistence
+- Controlled workflow failure handling
+
+### Phase 8 — Operational Analytics
+
+Introduced:
+
+- Operational overview analytics
+- Processing performance analytics
+- Integration activity analytics
+- Bounded recent activity monitoring
+- Safe handling of empty databases
+- Data-backed analytics without invented metrics
+
+**Current project status: Phase 8 — Operational Analytics.**
+
+---
+
+## 🧰 Technology Stack
+
+- **Python 3.10+**
+- **FastAPI** — REST API layer
+- **Uvicorn** — local ASGI server
+- **Pydantic** — domain and input validation
+- **SQLite** — local persistence
+- **pytest** — automated testing
+- **HTTPX** — isolated API testing
+- **python-dotenv** — optional environment configuration
+- **pathlib** — centralized filesystem paths
+- **logging** — application and lifecycle logging
+
+---
+
+## 💼 Portfolio Value
+
+This project demonstrates the ability to build beyond isolated automation scripts and design a complete, structured business automation system.
+
+### Engineering capabilities demonstrated
+
+**Python Engineering**  
+Modular application design, domain models, validation, exceptions, configuration, persistence, and logging.
+
+**AI Automation**  
+Deterministic task analysis, classification, confidence scoring, recommended actions, and a provider abstraction boundary.
+
+**Workflow Engineering**  
+Explicit task lifecycle, business rules, action planning, controlled execution, and persistence.
+
+**API Engineering**  
+FastAPI service design, structured request/response models, health checks, batch processing, and OpenAPI documentation.
+
+**Data & Persistence**  
+SQLite schema management, parameterized operations, lifecycle records, processing metadata, and analytics queries.
+
+**Integration Architecture**  
+Connector isolation, integration routing, local simulation, payload validation, and controlled external-side-effect boundaries.
+
+**Quality Engineering**  
+Automated tests, deterministic behavior, controlled failures, idempotency, and reproducible local execution.
+
+---
+
+## ⭐ Project Positioning
+
+> **A complete local business automation foundation demonstrating structured workflows, deterministic AI-style analysis, safe action execution, persistence, integrations, APIs, analytics, and automated testing.**
+
+The project is deliberately transparent about what is implemented today and what remains an extension point for future development.
+
+---
+
+## 📌 Scope
+
+### Implemented
+
+Local end-to-end workflow, input ingestion, validation, deterministic analysis, rule-based automation, action execution, SQLite persistence, integration simulation, FastAPI API, lifecycle tracking, idempotency, operational analytics, logging, and automated testing.
+
+### Not Yet Implemented
+
+Real Gmail/Outlook/Slack/Teams integrations, real external webhook delivery, CRM integrations, external business APIs, real LLM providers, frontend dashboards, and production deployment.
+
+---
+
+⭐ **Built as a practical Python and AI Automation engineering project focused on maintainable architecture, reliable workflows, and real business automation patterns.**
