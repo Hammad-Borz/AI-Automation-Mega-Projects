@@ -45,6 +45,14 @@ This project provides a local automation foundation that separates those respons
 
 ---
 
+## 🔴 What Problem Does It Address?
+
+Business requests can arrive through different channels and require repeated operational work such as validation, classification, prioritization, action planning, storage, and reporting. Without a structured workflow, these steps can become fragmented, repetitive, difficult to track, and harder to test reliably.
+
+## 🟢 What Does This Solve?
+
+The Hub provides one structured workflow for turning incoming business tasks into validated, analyzed, actionable, and traceable results. It standardizes processing across input sources, automates rule-based decisions and actions, records the full lifecycle, and provides an API and analytics layer for monitoring the system.
+
 ## 🏗️ End-to-End Architecture
 
 ~~~text
